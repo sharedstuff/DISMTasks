@@ -14,7 +14,8 @@
         # The complete path to the WIM or ISO file that will be converted to a Virtual Hard Disk.
         # The ISO file must be valid Windows installation media to be recognized successfully.
         [Parameter(Mandatory)]
-        [ValidateScript({
+        [ValidateScript(
+            {
                 if (-Not ($_ | Test-Path) ) {
                     throw 'File does not exist.'
                 }
@@ -25,7 +26,8 @@
                     throw 'File specified must be either of type iso or wim.'
                 }
                 return $true
-            })]
+            }
+        )]
         [System.IO.FileInfo]
         $SourcePath,
 
@@ -52,47 +54,51 @@
 
         # The size of the Virtual Hard Disk to create.
         [Parameter(Mandatory)]
-        [int64]
+        [ulong]
         $SizeBytes
 
     )
 
     begin {
 
-        $mslabVersion = 'dev'
+        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+        '{0} ...' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Cyan
+        Start-TranscriptSafe ('{0}.log' -f $VHDPath)
 
-        #region download convert-windowsimage if needed and load it
-        $convertWindowsImagePath = "$PSScriptRoot\Convert-WindowsImage.ps1"
-        if (-not (Test-Path -Path $convertWindowsImagePath)) {
-            'Downloading Convert-WindowsImage ...' | Write-Host -ForegroundColor Yellow
-            try {
-                Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/microsoft/MSLab/releases/download/$mslabVersion/Convert-WindowsImage.ps1" -OutFile $convertWindowsImagePath
-            }
-            catch {
-                try {
-                    "Download Convert-windowsimage.ps1 from releases ($mslabVersion) failed with $($_.Exception.Message), trying master branch now" | Write-Host -ForegroundColor Yellow
-                    Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/microsoft/MSLab/master/Tools/Convert-WindowsImage.ps1' -OutFile $convertWindowsImagePath
-                }
-                catch {
-                    throw 'Failed to download Convert-WindowsImage.ps1!'
-                }
-            }
-        }
-
-        #load convert-windowsimage
-        . "$PSScriptRoot\Convert-WindowsImage.ps1"
+        Invoke-WebRequestConvertWindowsImage
 
     }
 
     process {
 
-        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+        '... process ...' | Write-Host -ForegroundColor Yellow
 
-        $ConvertWindowsImageParams = $PSBoundParameters
-        $ConvertWindowsImageParams.DiskLayout = 'UEFI'
+        try {
 
-        Convert-WindowsImage @ConvertWindowsImageParams
-        Get-VHD $ConvertWindowsImageParams.VHDPath
+            $ConvertWindowsImageParams = $PSBoundParameters
+            $ConvertWindowsImageParams.DiskLayout = 'UEFI'
+
+            Convert-WindowsImage @ConvertWindowsImageParams
+            Get-VHD $ConvertWindowsImageParams.VHDPath
+
+            $VHDRoot = $ConvertWindowsImageParams.VHDPath | Mount-VHDDISMTasks
+            $VHDRoot | Invoke-DISMRestoreHealth
+            $ConvertWindowsImageParams.VHDPath | Dismount-VHDDISMTasks
+
+        }
+
+        catch {
+            $_
+            $ConvertWindowsImageParams.VHDPath | Dismount-VHDDISMTasks
+            Stop-TranscriptSafe
+        }
+
+    }
+
+    end {
+
+        Stop-TranscriptSafe
+        '... {0}: done' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Green
 
     }
 

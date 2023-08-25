@@ -1,5 +1,13 @@
 ﻿function New-WindowsImageDISMTasks {
 
+    <#
+
+        .SYNOPSIS
+        Creates a set of VHDs
+        Starts a VM
+
+    #>
+
     [CmdletBinding()]
     param (
 
@@ -51,7 +59,7 @@
 
         # The size of the Virtual Hard Disk to create.
         [Parameter()]
-        [int64]
+        [ulong]
         $SizeBytes = 128GB,
 
         # The path of a directory for use as build cache
@@ -70,6 +78,18 @@
         [System.IO.FileInfo]
         $CachePath = '.\.cache',
 
+        # AppProvisionedPackage(s) DisplayName(s) to keep during the process
+        [Parameter()]
+        [string[]]
+        $AppProvisionedPackage = @(
+            'Microsoft.DesktopAppInstaller'
+            'Microsoft.SecHealthUI'
+            'Microsoft.VCLibs.140.00'
+            'Microsoft.WindowsStore'
+            'Microsoft.WindowsTerminal'
+            'MicrosoftWindows.Client.WebExperience'
+            'Microsoft.HEVCVideoExtension' # <-- 1€ !!!
+        ),
 
         # Multiple Path
 
@@ -120,6 +140,22 @@
         )]
         [System.IO.FileInfo[]]
         $DriverPath,
+
+        # Directory(s) to add AppProvisionedPackage(s) from
+        [Parameter()]
+        [ValidateScript(
+            {
+                if (-Not ($_ | Test-Path) ) {
+                    throw 'Directory does not exist.'
+                }
+                if (-Not ($_ | Test-Path -PathType Container) ) {
+                    throw 'Argument must be a directory.'
+                }
+                return $true
+            }
+        )]
+        [System.IO.FileInfo[]]
+        $AppProvisionedPackagePath,
 
 
         # Optimize VHD using Optimize-WindowsImageVHDDismTasks
@@ -233,8 +269,9 @@
             # Optimize-WindowsImageVHDDISMTasks
             'Optimize-WindowsImageVHDDISMTasks ...' | Write-Host -ForegroundColor Yellow
             $OptimizeWindowsImageVHDDISMTasksParams = @{
-                SourcePath = $ConvertWindowsImageDISMTasksParams.VHDPath
-                VHDPath    = Join-Path $CachePath (('{0}.{1}.min.vhdx') -f (Get-Item $SourcePath).BaseName, $Edition)
+                SourcePath            = $ConvertWindowsImageDISMTasksParams.VHDPath
+                VHDPath               = Join-Path $CachePath (('{0}.{1}.min.vhdx') -f (Get-Item $SourcePath).BaseName, $Edition)
+                AppProvisionedPackage = $AppProvisionedPackage
             }
             if (Test-Path $OptimizeWindowsImageVHDDISMTasksParams.VHDPath) {
                 '... using cache ...' | Write-Host -ForegroundColor Green
@@ -280,16 +317,7 @@
         try {
 
             # Mount
-            'Mount-DiskImage ...' | Write-Host -ForegroundColor Yellow
-            '... process ...' | Write-Host -ForegroundColor Yellow
-            $DiskImage = Mount-DiskImage $VHDPath
-            $Volume = $DiskImage | Get-Disk | Get-Partition | Get-Volume
-            $DriveLetter = $Volume.DriveLetter | Sort-Object -Unique
-            if ($DriveLetter.Count -gt 1) { throw 'Multiple DriveLetters found!' }
-            if ($DriveLetter.Count -lt 1) { throw 'No DriveLetters found!' }
-            $VHDRoot = '{0}:\' -f $DriveLetter
-            '... done' | Write-Host -ForegroundColor Green
-
+            $VHDRoot = $VHDPath | Mount-VHDDISMTasks
 
             'Tasks on the VHD ...' | Write-Host -ForegroundColor Yellow
             '... process ...' | Write-Host -ForegroundColor Yellow
@@ -306,6 +334,16 @@
                 '... done' | Write-Host -ForegroundColor Green
             }
 
+            # DriverPath
+            if ($DriverPath) {
+                'DriverPath ...' | Write-Host -ForegroundColor Yellow
+                '... process ...' | Write-Host -ForegroundColor Yellow
+                $DriverPath | ForEach-Object {
+                    $_ | Write-Host -ForegroundColor Yellow
+                    Add-WindowsDriver -Path $VHDRoot -Driver $_ -Recurse
+                }
+                '... done' | Write-Host -ForegroundColor Green
+            }
 
             # PackagePath
             if ($PackagePath) {
@@ -318,14 +356,21 @@
                 '... done' | Write-Host -ForegroundColor Green
             }
 
-
-            # DriverPath
-            if ($DriverPath) {
-                'DriverPath ...' | Write-Host -ForegroundColor Yellow
+            # AppProvisonedPackagePath
+            if ($AppProvisionedPackagePath) {
+                'AppProvisionedPackagePath ...' | Write-Host -ForegroundColor Yellow
                 '... process ...' | Write-Host -ForegroundColor Yellow
-                $DriverPath | ForEach-Object {
+                $AppProvisionedPackagePath | ForEach-Object {
                     $_ | Write-Host -ForegroundColor Yellow
-                    # TBD
+                    Get-ChildItem $_ -Filter '*.*appxbundle' | ForEach-Object {
+                        $_ | Write-Host -ForegroundColor Yellow
+                        try {
+                            Add-AppProvisionedPackage -Path $VHDRoot -PackagePath $_.FullName -SkipLicense
+                        }
+                        catch {
+                            throw $_
+                        }
+                    }
                 }
                 '... done' | Write-Host -ForegroundColor Green
             }
@@ -350,8 +395,7 @@
 
             # Unmount
             'Error during build' | Write-Host -ForegroundColor Red
-            'Unmount-DiskImage ...' | Write-Host -ForegroundColor Red
-            $null = $DiskImage | Dismount-DiskImage
+            $VHDPath | Dismount-VHDDISMTasks
             throw $_
 
         }
@@ -359,10 +403,7 @@
         finally {
 
             # Unmount
-            'Unmount-DiskImage ...' | Write-Host -ForegroundColor Yellow
-            '... process ...' | Write-Host -ForegroundColor Yellow
-            $null = $DiskImage | Dismount-DiskImage
-            '... done' | Write-Host -ForegroundColor Green
+            $VHDPath | Dismount-VHDDISMTasks
 
         }
 
@@ -424,7 +465,7 @@
             if ($VM -and $StartVM -and $ConnectVM) {
                 'Connect-VM (vmconnect.exe) ...' | Write-Host -ForegroundColor Yellow
                 '... process ...' | Write-Host -ForegroundColor Yellow
-                vmconnect.exe localhost $VM.Name
+                vmconnect.exe $Env:COMPUTERNAME $VM.Name
                 '... done' | Write-Host -ForegroundColor Green
             }
 

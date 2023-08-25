@@ -1,5 +1,13 @@
 ﻿function Optimize-WindowsImageDISMTasks {
 
+    <#
+
+        .SYNOPSIS
+
+
+    #>
+
+
     [CmdletBinding()]
     param (
 
@@ -72,18 +80,25 @@
         # AppProvisionedPackage(s) DisplayName(s) to keep during the process
         [Parameter()]
         [string[]]
-        $AppProvisionedPackage = @(
+        $AppProvisionedPackage = @()
+
+    )
+
+    begin {
+
+        # Blocked Packages
+        @(
             'Microsoft.DesktopAppInstaller'
             'Microsoft.SecHealthUI'
             'Microsoft.VCLibs.140.00'
             'Microsoft.WindowsStore'
             'Microsoft.WindowsTerminal'
             'MicrosoftWindows.Client.WebExperience'
-        )
+            'Microsoft.HEVCVideoExtension' # <-- 1€ !!!
+        ) | ForEach-Object {
+            if ($AppProvisionedPackage -notcontains $_) { $AppProvisionedPackage += $_ }
+        }
 
-    )
-
-    begin {
 
         'Optimize-WindowsImageDISMTasks ...' | Write-Host -ForegroundColor Yellow
 
@@ -111,16 +126,7 @@
         try {
 
             # Mount
-            'Mount-DiskImage ...' | Write-Host -ForegroundColor Yellow
-            '... process ...' | Write-Host -ForegroundColor Yellow
-            $DiskImage = Mount-DiskImage $VHDPath
-            $Volume = $DiskImage | Get-Disk | Get-Partition | Get-Volume
-            $DriveLetter = $Volume.DriveLetter | Sort-Object -Unique
-            if ($DriveLetter.Count -gt 1) { throw 'Multiple DriveLetters found!' }
-            if ($DriveLetter.Count -lt 1) { throw 'No DriveLetters found!' }
-            $VHDRoot = '{0}:\' -f $DriveLetter
-            '... done' | Write-Host -ForegroundColor Green
-
+            $VHDRoot = $VHDPath | Mount-VHDDISMTasks
 
             'Tasks on the VHD ...' | Write-Host -ForegroundColor Yellow
             '... process ...' | Write-Host -ForegroundColor Yellow
@@ -186,6 +192,10 @@
             '... done' | Write-Host -ForegroundColor Green
 
 
+            # DISM
+            $VHDRoot | Invoke-DISMRestoreHealth
+
+
             # Specification.json file
             'Generate .Specification.json file ...' | Write-Host -ForegroundColor Yellow
             '... process ...' | Write-Host -ForegroundColor Yellow
@@ -205,8 +215,7 @@
 
             'Error during build' | Write-Host -ForegroundColor Red
 
-            'Unmount-DiskImage ...' | Write-Host -ForegroundColor Red
-            $null = $DiskImage | Dismount-DiskImage
+            $VHDPath | Dismount-VHDDISMTasks
 
             'Remove VHD ...' | Write-Host -ForegroundColor Red
             Remove-Item $VHDPath -Force
@@ -216,13 +225,7 @@
         }
 
         finally {
-
-            # Unmount
-            'Unmount-DiskImage ...' | Write-Host -ForegroundColor Yellow
-            '... process ...' | Write-Host -ForegroundColor Yellow
-            $null = $DiskImage | Dismount-DiskImage
-            '... done' | Write-Host -ForegroundColor Green
-
+            $VHDPath | Dismount-VHDDISMTasks
         }
 
     }
