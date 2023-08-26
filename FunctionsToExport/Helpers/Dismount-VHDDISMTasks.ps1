@@ -3,7 +3,7 @@ function Dismount-VHDDISMTasks {
     <#
 
         .SYNOPSIS
-        Wrapper for Dismount-DiskImage
+        Wrapper for Dismount-VHD (DiskImage)
 
     #>
 
@@ -31,22 +31,13 @@ function Dismount-VHDDISMTasks {
     )
 
     begin {
-        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
-        '{0} ...' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Cyan
+        $Script:ErrorActionPreference = 'Stop'
     }
 
     process {
-
-        '... process ...' | Write-Host -ForegroundColor Yellow
-
         $VHDPath | ForEach-Object {
             Get-DiskImage $VHDPath | Dismount-DiskImage
         }
-
-    }
-
-    end {
-        '... {0}: done' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Green
     }
 
 }

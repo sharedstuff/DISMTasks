@@ -1,4 +1,4 @@
-function Stop-TranscriptSafe {
+function Stop-TranscriptDISMTasks {
 
     <#
 
@@ -11,7 +11,7 @@ function Stop-TranscriptSafe {
     param ()
 
     begin {
-        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+        $Script:ErrorActionPreference = 'Stop'
     }
 
     process {

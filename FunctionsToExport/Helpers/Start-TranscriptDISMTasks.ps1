@@ -1,4 +1,4 @@
-function Start-TranscriptSafe {
+function Start-TranscriptDISMTasks {
 
     <#
 
@@ -29,11 +29,12 @@ function Start-TranscriptSafe {
     )
 
     begin {
-        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+        $Script:ErrorActionPreference = 'Stop'
     }
 
     process {
         try { $null = Stop-Transcript } catch {}
+        $PSBoundParameters.Force = $true
         $PSBoundParameters.UseMinimalHeader = $true
         Start-Transcript @PSBoundParameters
     }

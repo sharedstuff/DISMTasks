@@ -3,7 +3,7 @@ function Mount-VHDDISMTasks {
     <#
 
         .SYNOPSIS
-        Wrapper for Mount-DiskImage
+        Wrapper for Mount-VHD (DiskImage)
 
     #>
 
@@ -31,13 +31,10 @@ function Mount-VHDDISMTasks {
     )
 
     begin {
-        $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
-        '{0} ...' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Cyan
+        $Script:ErrorActionPreference = 'Stop'
     }
 
     process {
-        '... process ...' | Write-Host -ForegroundColor Yellow
-
         $VHDPath | ForEach-Object {
 
             try {
@@ -57,11 +54,6 @@ function Mount-VHDDISMTasks {
             }
 
         }
-
-    }
-
-    end {
-        '... {0}: done' -f $MyInvocation.MyCommand | Write-Host -ForegroundColor Green
     }
 
 }
