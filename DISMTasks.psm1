@@ -12,10 +12,7 @@ function Invoke-DISMTasks {
 
         # The complete path to the WIM or ISO file that will be converted to a Virtual Hard Disk.
         # The ISO file must be valid Windows installation media to be recognized successfully.
-        [Parameter(
-            Mandatory,
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -34,10 +31,7 @@ function Invoke-DISMTasks {
         $SourcePath,
 
         # The name and path of the Virtual Hard Disk to create.
-        [Parameter(
-            Mandatory,
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not (Split-Path $_ | Test-Path) ) {
@@ -53,32 +47,23 @@ function Invoke-DISMTasks {
         $VHDPath,
 
         # The name or image index of the image to apply from the WIM.
-        [Parameter(
-            Mandatory,
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]
         $Edition,
 
 
         # Optimize
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [switch]
         $Optimize,
 
         # The size of the Virtual Hard Disk to create.
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ulong]
         $SizeBytes = 128GB,
 
         # The path of a directory for use as build cache
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -95,16 +80,12 @@ function Invoke-DISMTasks {
 
 
         # AppProvisionedPackage(s) DisplayName(s) to keep during the process
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]
         $AppProvisionedPackage,
 
         # Directory(s) to add AppProvisionedPackage(s) from
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -120,9 +101,7 @@ function Invoke-DISMTasks {
         $AppProvisionedPackagePath,
 
         # Directory(s) to add Driver(s) from
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -138,9 +117,7 @@ function Invoke-DISMTasks {
         $DriverPath,
 
         # Directory(s) to copy/merge Content from
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -156,9 +133,7 @@ function Invoke-DISMTasks {
         $MergePath,
 
         # Directory(s) to add Package(s) from
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateScript(
             {
                 if (-Not ($_ | Test-Path) ) {
@@ -174,101 +149,73 @@ function Invoke-DISMTasks {
         $PackagePath,
 
         # WindowsCapability(s)
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]
         $WindowsCapability = @(),
 
         # WindowsOptionalFeature(s)
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]]
         $WindowsOptionalFeature = @(),
 
 
         # The name of the VM to use/create.
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]
         $Name,
 
         # Start the VM at the end of the build process.
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [switch]
         $StartVM,
 
         # Connect to the VM at the end of the build process.
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [switch]
         $ConnectVM,
 
         # VM SwitchName
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]
         $SwitchName = 'Default Switch',
 
         # VM ProcessorCount
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [int]
         $ProcessorCount = 4,
 
         # VM DynamicMemory
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool]
         $DynamicMemory = $true,
 
         # VM MemoryStartupBytes
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [int64]
         $MemoryStartupBytes = 2GB,
 
         # VM MemoryMinimumBytes
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [int64]
         $MemoryMinimumBytes = 2GB,
 
         # VM MemoryMaximumBytes
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [int64]
         $MemoryMaximumBytes = 8GB,
 
         # VM AutomaticStartAction
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]
         $AutomaticStartAction = 'Nothing',
 
         # VM AutomaticStopAction
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]
         $AutomaticStopAction = 'ShutDown',
 
         # VM CheckpointType
-        [Parameter(
-            ValueFromPipelineByPropertyName
-        )]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string]
         $CheckpointType = 'Disabled'
 
@@ -304,8 +251,8 @@ function Invoke-DISMTasks {
 
         # Optimize
         $InvokeDISMTasksOptimizeParams = @{
-            SourcePath             = $InvokeDISMTasksConvertParams.VHDPath
-            VHDPath                = '{0}.Optimize.vhdx' -f $VHDPath
+            SourcePath = $InvokeDISMTasksConvertParams.VHDPath
+            VHDPath    = '{0}.Optimize.vhdx' -f $VHDPath
         }
         @(
             'AppProvisionedPackage'
@@ -327,11 +274,11 @@ function Invoke-DISMTasks {
 
         # Build
         $InvokeDISMTasksBuildParams = @{
-            SourcePath                = & {
+            SourcePath = & {
                 if ($Optimize) { $InvokeDISMTasksOptimizeParams.VHDPath }
                 else { $InvokeDISMTasksConvertParams.VHDPath }
             }
-            VHDPath                   = '{0}.Build.vhdx' -f $VHDPath
+            VHDPath    = '{0}.Build.vhdx' -f $VHDPath
         }
         @(
             'AppProvisionedPackagePath'

@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'E:\localdev\DISMTasks\DISMTasks.psm1'
+RootModule = 'E:\sharedstuff\DISMTasks\DISMTasks.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.1'
@@ -18,7 +18,7 @@ ModuleVersion = '0.1'
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = '6f099701-5917-41c4-8e20-1452845b63e7'
+GUID = '3b9051ca-af5e-4bbe-9673-a9c488db520f'
 
 # Author of this module
 Author = 'https://github.com/sharedstuff'
